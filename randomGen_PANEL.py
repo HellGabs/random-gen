@@ -11,9 +11,8 @@ bl_info = {
 
 import bpy
 import random
-import randomGen
 
-############# GLOBAL VARIABLES #############
+############# GLOBAL VARIABLES ##############
 bodies = []
 eyeglasses = []
 hats = []
@@ -21,11 +20,13 @@ gloves = []
 backgrounds = []
 coins = []
 
+characters_amount = 1
 
 ############# OPERATORS #############
 class GenerateCharacters(bpy.types.Operator):
     bl_idname = 'generate.characters'
     bl_label = 'Generate'
+    bl_options = {'REGISTER', 'UNDO'}
 
     def generate(context):
         GenerateCharacters.get_items()
