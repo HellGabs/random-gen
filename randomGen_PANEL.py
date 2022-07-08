@@ -11,6 +11,7 @@ bl_info = {
 
 import bpy
 import random
+from bpy.props import *
 
 ############# GLOBAL VARIABLES ##############
 bodies = []
@@ -20,18 +21,33 @@ gloves = []
 backgrounds = []
 coins = []
 
-characters_amount = 1
+
+############# PROPERTIES #############
+class MyProprerties(bpy.types.PropertyGroup):
+    char_amount: bpy.props.IntProperty(
+        name="Characters",
+        description="Insert the amount of characters you want to create",
+        default=1,
+        min=0,
+        max=4000
+    )
+
 
 ############# OPERATORS #############
+
+
 class GenerateCharacters(bpy.types.Operator):
     bl_idname = 'generate.characters'
     bl_label = 'Generate'
     bl_options = {'REGISTER', 'UNDO'}
 
-    def generate(context):
+    def generate(context, amount):
         GenerateCharacters.get_items()
-        GenerateCharacters.clear_all()
-        GenerateCharacters.select_objects()
+
+        for character in range(amount):
+            GenerateCharacters.clear_all()
+            GenerateCharacters.select_objects()
+            GenerateCharacters.render_character(character + 1)
 
     def get_items():
         for body in bpy.data.collections['BODIES'].all_objects:
@@ -102,8 +118,15 @@ class GenerateCharacters(bpy.types.Operator):
         coins[randomCoin].hide_set(False)
         coins[randomCoin].hide_render = False
 
+    def render_character(img_number):
+        bpy.context.scene.render.filepath = "//GENERATED\{}.png".format(img_number)
+        bpy.ops.render.render(write_still=True)
+
     def execute(self, context):
-        GenerateCharacters.generate(context)
+        scene = context.scene
+        mytool = scene.my_tool
+
+        GenerateCharacters.generate(context, mytool.char_amount)
         return {'FINISHED'}
 
 
@@ -118,9 +141,11 @@ class MainPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        mytool = scene.my_tool
+
+        layout.prop(mytool, "char_amount")
 
         row = layout.row()
-        row.label(text='Create a New Character')
         row = layout.row()
         row.operator("generate.characters")
 
@@ -128,13 +153,19 @@ class MainPanel(bpy.types.Panel):
 ############# LOAD ADDON CLASSES #############
 
 def register():
-    bpy.utils.register_class(MainPanel)
     bpy.utils.register_class(GenerateCharacters)
+    bpy.utils.register_class(MainPanel)
+    bpy.utils.register_class(MyProprerties)
+
+    bpy.types.Scene.my_tool = bpy.props.PointerProperty(type=MyProprerties)
 
 
 def unregister():
-    bpy.utils.unregister_class(MainPanel)
     bpy.utils.unregister_class(GenerateCharacters)
+    bpy.utils.unregister_class(MainPanel)
+    bpy.utils.unregister_class(MyProprerties)
+
+    del bpy.types.Scene.my_tool
 
 
 if __name__ == "__main__":
