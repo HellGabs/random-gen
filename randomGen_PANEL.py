@@ -28,7 +28,7 @@ class MyProprerties(bpy.types.PropertyGroup):
         name="Characters",
         description="Insert the amount of characters you want to create",
         default=1,
-        min=0,
+        min=1,
         max=4000
     )
 
@@ -38,7 +38,7 @@ class MyProprerties(bpy.types.PropertyGroup):
 
 class GenerateCharacters(bpy.types.Operator):
     bl_idname = 'generate.characters'
-    bl_label = 'Generate'
+    bl_label = 'CLICK TO START'
     bl_options = {'REGISTER', 'UNDO'}
 
     def generate(context, amount):
@@ -143,11 +143,13 @@ class MainPanel(bpy.types.Panel):
         scene = context.scene
         mytool = scene.my_tool
 
+        layout.label(text="Set the amount:")
         layout.prop(mytool, "char_amount")
 
-        row = layout.row()
+        layout.label(text="Generate characters:")
         row = layout.row()
         row.operator("generate.characters")
+        row.scale_y = 3.0
 
 
 ############# LOAD ADDON CLASSES #############
