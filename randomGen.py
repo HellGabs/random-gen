@@ -13,15 +13,16 @@ import bpy
 import random
 from bpy.props import *
 import os
+import json
 
 ############# GLOBAL VARIABLES ##############
 bodies = []
 eyeglasses = []
 hats = []
-gloves = []
-backgrounds = []
+hands = []
 coins = []
-
+backgrounds = []
+traits_collection = {'Body': bodies, 'Eyeglasses': eyeglasses, 'Hat': hats, 'Hands': hands, 'Coin': coins, 'Background': backgrounds}
 
 ############# PROPERTIES #############
 class MyProprerties(bpy.types.PropertyGroup):
@@ -65,76 +66,44 @@ class GenerateCharacters(bpy.types.Operator):
                 GenerateCharacters.glb_export(character + 1)
 
     def get_items():
-        for body in bpy.data.collections['BODIES'].all_objects:
+
+
+        for body in bpy.data.collections['Body'].all_objects:
             bodies.append(body)
 
-        for eyeglass in bpy.data.collections['EYEGLASSES'].all_objects:
+        for eyeglass in bpy.data.collections['Eyeglasses'].all_objects:
             eyeglasses.append(eyeglass)
 
-        for hat in bpy.data.collections['HATS'].all_objects:
+        for hat in bpy.data.collections['Hat'].all_objects:
             hats.append(hat)
 
-        for glove in bpy.data.collections['GLOVES'].all_objects:
-            gloves.append(glove)
+        for glove in bpy.data.collections['Hands'].all_objects:
+            hands.append(glove)
 
-        for bg in bpy.data.collections['BACKGROUNDS'].all_objects:
+        for bg in bpy.data.collections['Background'].all_objects:
             backgrounds.append(bg)
 
-        for coin in bpy.data.collections['CoinswithFace'].all_objects:
+        for coin in bpy.data.collections['Coin'].all_objects:
             coins.append(coin)
 
+
+
     def clear_all():
-        for body in bodies:
-            body.hide_set(True)
-            body.hide_render = True
 
-        for eyeglass in eyeglasses:
-            eyeglass.hide_set(True)
-            eyeglass.hide_render = True
-
-        for hat in hats:
-            hat.hide_set(True)
-            hat.hide_render = True
-
-        for glove in gloves:
-            glove.hide_set(True)
-            glove.hide_render = True
-
-        for bg in backgrounds:
-            bg.hide_set(True)
-            bg.hide_render = True
-
-        for coin in coins:
-            coin.hide_set(True)
-            coin.hide_render = True
+        for collection in traits_collection:
+            for trait in traits_collection[collection]:
+                trait.hide_set(True)
+                trait.hide_render = True
 
     def select_objects():
-        randomBody = random.randrange(0, len(bodies) - 1)
-        bodies[randomBody].hide_set(False)
-        bodies[randomBody].hide_render = False
+        metadata = {}
+        for collection in traits_collection:
+            trait = random.choice(traits_collection[collection])
+            trait.hide_set(False)
+            trait.hide_render = False
 
-        randomEyeglass = random.randrange(0, len(eyeglasses) - 1)
-        eyeglasses[randomEyeglass].hide_set(False)
-        eyeglasses[randomEyeglass].hide_render = False
-
-        randomHat = random.randrange(0, len(hats) - 1)
-        hats[randomHat].hide_set(False)
-        hats[randomHat].hide_render = False
-
-        randomGlove = random.randrange(0, len(gloves) - 1)
-        gloves[randomGlove].hide_set(False)
-        gloves[randomGlove].hide_render = False
-
-        randomBg = random.randrange(0, len(backgrounds) - 1)
-        backgrounds[randomBg].hide_set(False)
-        backgrounds[randomBg].hide_render = False
-
-        randomCoin = random.randrange(0, len(coins) - 1)
-        coins[randomCoin].hide_set(False)
-        coins[randomCoin].hide_render = False
-
-    def render_character(char_number):
-        bpy.context.scene.render.filepath = "//GENERATED\{}.png".format(char_number)
+    def render_character(filename):
+        bpy.context.scene.render.filepath = f"//PNG_characters\QSTN#{filename}.png"
         bpy.ops.render.render(write_still=True)
 
     def glb_export(filename):
@@ -143,7 +112,7 @@ class GenerateCharacters(bpy.types.Operator):
         directory = os.path.dirname(blend_file_path)
         if not os.path.isdir(directory+glb_folder):
             os.mkdir(directory+glb_folder)
-        target_file = os.path.join(directory+glb_folder, f'{filename}.glb')
+        target_file = os.path.join(directory+glb_folder, f'QSTN#{filename}.glb')
 
         bpy.ops.export_scene.gltf(
             filepath=target_file,
@@ -161,6 +130,54 @@ class GenerateCharacters(bpy.types.Operator):
 
         GenerateCharacters.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export)
         return {'FINISHED'}
+
+    '''def generate_metadata(traits_info, filename):
+        json_folder = '//metadata'
+        blend_file_path = bpy.data.filepath
+        directory = os.path.dirname(blend_file_path)
+
+
+        metadata_template = {
+            "description": "A Question character for QSTN",
+            "image": "the image path (maybe ipfs/pinata?)",
+            "name": f"QSTN#{filename}",
+            "attributes": [
+                {
+                    "trait_type": "Body",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Eyeglasses",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Hat",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Hands",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Coin",
+                    "value": ""
+                },
+                {
+                    "trait_type": "Background",
+                    "value": ""
+                }
+            ]
+        }
+        if not os.path.isdir(directory+json_folder):
+            os.mkdir(directory+json_folder)
+
+        for att in metadata_template['attributes']:
+            att['value'] = traits_info[att['trait_type']]
+
+        # formats the metadata template into json standards.
+        result = json.dumps(metadata_template, indent=4)
+        with open(f'{json_folder}/QSTN#{filename}.json', 'x') as f:
+            f.write(result)'''
 
 
 ############# PANEL UI #############
