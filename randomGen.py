@@ -22,7 +22,9 @@ hats = []
 hands = []
 coins = []
 backgrounds = []
-traits_collection = {'Body': bodies, 'Eyeglasses': eyeglasses, 'Hat': hats, 'Hands': hands, 'Coin': coins, 'Background': backgrounds}
+traits_collection = {'Body': bodies, 'Eyeglasses': eyeglasses, 'Hat': hats, 'Hands': hands, 'Coin': coins,
+                     'Background': backgrounds}
+
 
 ############# PROPERTIES #############
 class MyProprerties(bpy.types.PropertyGroup):
@@ -36,14 +38,13 @@ class MyProprerties(bpy.types.PropertyGroup):
     png_export: bpy.props.BoolProperty(
         name='Export .png',
         description='Saves a .png version of each generated character.',
-        default = True
+        default=True
     )
     glb_export: bpy.props.BoolProperty(
         name='Export .glb',
         description='Saves a .glb version of each generated character.',
-        default = False
+        default=False
     )
-
 
 
 ############# OPERATORS #############
@@ -55,18 +56,20 @@ class GenerateCharacters(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def generate(context, amount, check_png, check_glb):
+
+        character_metadata = {}
         GenerateCharacters.get_items()
 
         for character in range(amount):
             GenerateCharacters.clear_all()
-            GenerateCharacters.select_objects()
+            character_metadata = GenerateCharacters.select_objects()
             if check_png:
                 GenerateCharacters.render_character(character + 1)
+                GenerateCharacters.generate_metadata(character_metadata, str(character + 1))
             if check_glb:
                 GenerateCharacters.glb_export(character + 1)
 
     def get_items():
-
 
         for body in bpy.data.collections['Body'].all_objects:
             bodies.append(body)
@@ -86,8 +89,6 @@ class GenerateCharacters(bpy.types.Operator):
         for coin in bpy.data.collections['Coin'].all_objects:
             coins.append(coin)
 
-
-
     def clear_all():
 
         for collection in traits_collection:
@@ -96,11 +97,16 @@ class GenerateCharacters(bpy.types.Operator):
                 trait.hide_render = True
 
     def select_objects():
-        metadata = {}
+        metadata = {'Body': '', 'Eyeglasses': '', 'Hat': '', 'Hands': '', 'Coin': '', 'Background': ''}
         for collection in traits_collection:
             trait = random.choice(traits_collection[collection])
             trait.hide_set(False)
             trait.hide_render = False
+            metadata[collection] = GenerateCharacters.format_string(trait.name)
+
+        return metadata
+
+        print(json.dumps(metadata, indent=4))
 
     def render_character(filename):
         bpy.context.scene.render.filepath = f"//PNG_characters\QSTN#{filename}.png"
@@ -110,9 +116,9 @@ class GenerateCharacters(bpy.types.Operator):
         glb_folder = '//GLB_characters'
         blend_file_path = bpy.data.filepath
         directory = os.path.dirname(blend_file_path)
-        if not os.path.isdir(directory+glb_folder):
-            os.mkdir(directory+glb_folder)
-        target_file = os.path.join(directory+glb_folder, f'QSTN#{filename}.glb')
+        if not os.path.isdir(directory + glb_folder):
+            os.mkdir(directory + glb_folder)
+        target_file = os.path.join(directory + glb_folder, f'QSTN#{filename}.glb')
 
         bpy.ops.export_scene.gltf(
             filepath=target_file,
@@ -124,19 +130,18 @@ class GenerateCharacters(bpy.types.Operator):
             export_cameras=True,
             use_visible=True)
 
-    def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+    def format_string(txt):
+        txt = txt.replace('-', ' ')
+        txt = txt.title()
+        return txt.split('.')[0]
 
-        GenerateCharacters.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export)
-        return {'FINISHED'}
+    def generate_metadata(traits_info, filename):
+        json_folder = 'metadata'
+        # .blend file name
+        blendfile = bpy.path.basename(bpy.context.blend_data.filepath)
 
-    '''def generate_metadata(traits_info, filename):
-        json_folder = '//metadata'
-        blend_file_path = bpy.data.filepath
-        directory = os.path.dirname(blend_file_path)
-
-
+        # .blend file path
+        filepath = bpy.data.filepath.split(blendfile)[0]
         metadata_template = {
             "description": "A Question character for QSTN",
             "image": "the image path (maybe ipfs/pinata?)",
@@ -168,8 +173,8 @@ class GenerateCharacters(bpy.types.Operator):
                 }
             ]
         }
-        if not os.path.isdir(directory+json_folder):
-            os.mkdir(directory+json_folder)
+        if not os.path.isdir(filepath + json_folder):
+            os.mkdir(filepath + json_folder)
 
         for att in metadata_template['attributes']:
             att['value'] = traits_info[att['trait_type']]
@@ -177,7 +182,14 @@ class GenerateCharacters(bpy.types.Operator):
         # formats the metadata template into json standards.
         result = json.dumps(metadata_template, indent=4)
         with open(f'{json_folder}/QSTN#{filename}.json', 'x') as f:
-            f.write(result)'''
+            f.write(result)
+
+    def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+
+        GenerateCharacters.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export)
+        return {'FINISHED'}
 
 
 ############# PANEL UI #############
