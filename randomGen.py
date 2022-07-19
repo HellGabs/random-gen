@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Random Gen",
     "author": "Gabriel Almeida",
-    "version": (1, 0),
+    "version": (2, 0),
     "blender": (3, 0, 1),
     "location": "View3D > Sidebar > Random Gen",
     "description": "Generates random characters",
