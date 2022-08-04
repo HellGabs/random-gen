@@ -22,7 +22,7 @@ hats = []
 hands = []
 coins = []
 backgrounds = []
-traits_collection = {'Body': bodies, 'Eyeglasses': eyeglasses, 'Hat': hats, 'Hands': hands, 'Coin': coins,
+traits_collection = {'Body': bodies, 'Eyewear': eyeglasses, 'Hat': hats, 'Hands': hands, 'Coin': coins,
                      'Background': backgrounds}
 
 
@@ -45,6 +45,10 @@ class MyProprerties(bpy.types.PropertyGroup):
         description='Saves a .glb version of each generated character.',
         default=False
     )
+    char_type: bpy.props.StringProperty(
+        name="Character Type",
+        default="Question"
+    )
 
 
 ############# OPERATORS #############
@@ -55,14 +59,14 @@ class GenerateCharacters(bpy.types.Operator):
     bl_label = 'CLICK TO START'
     bl_options = {'REGISTER', 'UNDO'}
 
-    def generate(context, amount, check_png, check_glb):
+    def generate(context, amount, check_png, check_glb, char_type):
 
         character_metadata = {}
         GenerateCharacters.get_items()
 
         for character in range(amount):
             GenerateCharacters.clear_all()
-            character_metadata = GenerateCharacters.select_objects()
+            character_metadata = GenerateCharacters.select_objects(char_type)
             if check_png:
                 GenerateCharacters.render_character(character + 1)
                 GenerateCharacters.generate_metadata(character_metadata, str(character + 1))
@@ -74,7 +78,7 @@ class GenerateCharacters(bpy.types.Operator):
         for body in bpy.data.collections['Body'].all_objects:
             bodies.append(body)
 
-        for eyeglass in bpy.data.collections['Eyeglasses'].all_objects:
+        for eyeglass in bpy.data.collections['Eyewear'].all_objects:
             eyeglasses.append(eyeglass)
 
         for hat in bpy.data.collections['Hat'].all_objects:
@@ -96,8 +100,10 @@ class GenerateCharacters(bpy.types.Operator):
                 trait.hide_set(True)
                 trait.hide_render = True
 
-    def select_objects():
-        metadata = {'Body': '', 'Eyeglasses': '', 'Hat': '', 'Hands': '', 'Coin': '', 'Background': ''}
+    def select_objects(type):
+
+        metadata = {'Character': type, 'Body': '', 'Eyewear': '', 'Hat': '', 'Hands': '', 'Coin': '',
+                    'Background': ''}
         for collection in traits_collection:
             trait = random.choice(traits_collection[collection])
             trait.hide_set(False)
@@ -143,16 +149,20 @@ class GenerateCharacters(bpy.types.Operator):
         # .blend file path
         filepath = bpy.data.filepath.split(blendfile)[0]
         metadata_template = {
-            "description": "A Question character for QSTN",
+            "description": "A character for QSTN Collection",
             "image": "the image path (maybe ipfs/pinata?)",
             "name": f"QSTN#{filename}",
             "attributes": [
+                {
+                    "trait_type": "Character",
+                    "value": ""
+                },
                 {
                     "trait_type": "Body",
                     "value": ""
                 },
                 {
-                    "trait_type": "Eyeglasses",
+                    "trait_type": "Eyewear",
                     "value": ""
                 },
                 {
@@ -188,7 +198,7 @@ class GenerateCharacters(bpy.types.Operator):
         scene = context.scene
         mytool = scene.my_tool
 
-        GenerateCharacters.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export)
+        GenerateCharacters.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export, mytool.char_type)
         return {'FINISHED'}
 
 
@@ -205,6 +215,8 @@ class MainPanel(bpy.types.Panel):
         scene = context.scene
         mytool = scene.my_tool
 
+        layout.label(text="Character:")
+        layout.prop(mytool, "char_type")
         layout.label(text="Set the amount:")
         layout.prop(mytool, "char_amount")
         layout.label(text="Render configs")
