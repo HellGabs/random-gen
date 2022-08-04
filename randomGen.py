@@ -223,10 +223,10 @@ class RarityIndex(bpy.types.Operator):
     # Also because you're dumb :)
     metadata_template = {
         "Character": [
-            {"name": "Question", "rarity": 0.0},
-            {"name": "Hashtag", "rarity": 0.0},
-            {"name": "Exclamation", "rarity": 0.0},
-            {"name": "Comma", "rarity": 0.0}
+            {"name": "Question", "amount": 0, "rarity": 0.0},
+            {"name": "Hashtag", "amount": 0, "rarity": 0.0},
+            {"name": "Exclamation", "amount": 0, "rarity": 0.0},
+            {"name": "Comma", "amount": 0, "rarity": 0.0}
         ],
         "Body": [],
         "Eyewear": [],
@@ -259,7 +259,7 @@ class RarityIndex(bpy.types.Operator):
 
         for trait in traits_collection:
             for item in traits_collection[trait]:
-                self.metadata_template[trait].append({"name": str(item), "rarity": 0.0})
+                self.metadata_template[trait].append({"name": str(item), "amount": 0, "rarity": 0.0})
 
         # checks if the metadata folder exists. If doesn't, it will create it.
         if not os.path.isdir(filepath + json_folder):
