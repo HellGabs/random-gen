@@ -198,7 +198,85 @@ class GenerateCharacters(bpy.types.Operator):
         scene = context.scene
         mytool = scene.my_tool
 
-        GenerateCharacters.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export, mytool.char_type)
+        self.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export, mytool.char_type)
+        return {'FINISHED'}
+
+
+### Generates a .json file containing the rarity value of each trait.
+class RarityIndex(bpy.types.Operator):
+    bl_idname = 'generate.rarity'
+    bl_label = 'Generate Rarity Index'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    traits_collection = {'Body': [], 'Eyewear': [], 'Hat': [], 'Hands': [], 'Coin': [], 'Background': []}
+
+
+    # this metadata will follow this pattern:
+    # "character": [
+    #   {
+    #       "name": "TRAIT_NAME",
+    #       "rarity": "RARITY_VALUE"
+    #   },
+    #   {...},
+    # ]
+    # I'm writing this because i know you have a shitty memory.
+    # Also because you're dumb :)
+    metadata_template = {
+        "Character": [
+            {"name": "Question", "rarity": 0.0},
+            {"name": "Hashtag", "rarity": 0.0},
+            {"name": "Exclamation", "rarity": 0.0},
+            {"name": "Comma", "rarity": 0.0}
+        ],
+        "Body": [],
+        "Eyewear": [],
+        "Hat": [],
+        "Hands": [],
+        "Coin": [],
+        "Background": []
+    }
+
+    def format_string(self, txt):
+        txt = txt.replace('-', ' ')
+        txt = txt.title()
+        return txt.split('.')[0]
+
+    def get_items(self):
+        for key in self.traits_collection:
+            for item in bpy.data.collections[key].all_objects:
+                traits_collection[key].append(self.format_string(item.name))
+
+
+    def generate(self):
+        filename = 'RARITIES'
+        json_folder = 'metadata'
+        # .blend file name
+        blendfile = bpy.path.basename(bpy.context.blend_data.filepath)
+        # .blend file path
+        filepath = bpy.data.filepath.split(blendfile)[0]
+
+        self.get_items()
+
+        for trait in traits_collection:
+            for item in traits_collection[trait]:
+                self.metadata_template[trait].append({"name": str(item), "rarity": 0.0})
+
+        # checks if the metadata folder exists. If doesn't, it will create it.
+        if not os.path.isdir(filepath + json_folder):
+            os.mkdir(filepath + json_folder)
+
+        # formats the metadata template into json standards and save it into the folder.
+        result = json.dumps(self.metadata_template, indent=4)
+        with open(f'{json_folder}/{filename}.json', 'x') as f:
+            f.write(result)
+
+
+
+    def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+
+        self.generate()
         return {'FINISHED'}
 
 
@@ -223,6 +301,11 @@ class MainPanel(bpy.types.Panel):
         layout.prop(mytool, "png_export")
         layout.prop(mytool, "glb_export")
 
+        layout.label(text="Rarity Index:")
+        row = layout.row()
+        row.operator("generate.rarity")
+        row.scale_y = 2.0
+
         layout.label(text="Generate characters:")
         row = layout.row()
         row.operator("generate.characters")
@@ -233,6 +316,7 @@ class MainPanel(bpy.types.Panel):
 
 def register():
     bpy.utils.register_class(GenerateCharacters)
+    bpy.utils.register_class(RarityIndex)
     bpy.utils.register_class(MainPanel)
     bpy.utils.register_class(MyProprerties)
 
@@ -241,6 +325,7 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(GenerateCharacters)
+    bpy.utils.unregister_class(RarityIndex)
     bpy.utils.unregister_class(MainPanel)
     bpy.utils.unregister_class(MyProprerties)
 
