@@ -198,7 +198,7 @@ class GenerateCharacters(bpy.types.Operator):
         scene = context.scene
         mytool = scene.my_tool
 
-        self.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export, mytool.char_type)
+        GenerateCharacters.generate(context, mytool.char_amount, mytool.png_export, mytool.glb_export, mytool.char_type)
         return {'FINISHED'}
 
 
@@ -208,32 +208,33 @@ class RarityIndex(bpy.types.Operator):
     bl_label = 'Generate Rarity Index'
     bl_options = {'REGISTER', 'UNDO'}
 
-    traits_collection = {'Body': [], 'Eyewear': [], 'Hat': [], 'Hands': [], 'Coin': [], 'Background': []}
+    traits = {'Body': [], 'Eyewear': [], 'Hat': [], 'Hands': [], 'Coin': [], 'Background': []}
 
-
-    # this metadata will follow this pattern:
-    # "character": [
-    #   {
-    #       "name": "TRAIT_NAME",
-    #       "rarity": "RARITY_VALUE"
-    #   },
-    #   {...},
-    # ]
-    # I'm writing this because i know you have a shitty memory.
-    # Also because you're dumb :)
     metadata_template = {
-        "Character": [
-            {"name": "Question", "amount": 0, "rarity": 0.0},
-            {"name": "Hashtag", "amount": 0, "rarity": 0.0},
-            {"name": "Exclamation", "amount": 0, "rarity": 0.0},
-            {"name": "Comma", "amount": 0, "rarity": 0.0}
-        ],
-        "Body": [],
-        "Eyewear": [],
-        "Hat": [],
-        "Hands": [],
-        "Coin": [],
-        "Background": []
+        "Character": {
+            "Question": {
+                "amount": 0,
+                "rarity": 0
+            },
+            "Hashtag": {
+                "amount": 0,
+                "rarity": 0
+            },
+            "Exclamation": {
+                "amount": 0,
+                "rarity": 0
+            },
+            "Comma": {
+                "amount": 0,
+                "rarity": 0
+            }
+        },
+        "Body": {},
+        "Eyewear": {},
+        "Hat": {},
+        "Hands": {},
+        "Coin": {},
+        "Background": {}
     }
 
     def format_string(self, txt):
@@ -242,12 +243,11 @@ class RarityIndex(bpy.types.Operator):
         return txt.split('.')[0]
 
     def get_items(self):
-        for key in self.traits_collection:
+        for key in self.traits:
             for item in bpy.data.collections[key].all_objects:
-                traits_collection[key].append(self.format_string(item.name))
+                self.traits[key].append(self.format_string(item.name))
 
-
-    def generate(self):
+    def generate_template(self, char_amount):
         filename = 'RARITIES'
         json_folder = 'metadata'
         # .blend file name
@@ -257,9 +257,9 @@ class RarityIndex(bpy.types.Operator):
 
         self.get_items()
 
-        for trait in traits_collection:
-            for item in traits_collection[trait]:
-                self.metadata_template[trait].append({"name": str(item), "amount": 0, "rarity": 0.0})
+        for trait in self.traits:
+            for item in self.traits[trait]:
+                self.metadata_template[trait].update({f"{item}": {"amount": 0, "rarity": 0}})
 
         # checks if the metadata folder exists. If doesn't, it will create it.
         if not os.path.isdir(filepath + json_folder):
@@ -270,13 +270,32 @@ class RarityIndex(bpy.types.Operator):
         with open(f'{json_folder}/{filename}.json', 'x') as f:
             f.write(result)
 
+        self.set_amount(char_amount)
 
+    def set_amount(self, char_amount):
+        rarities = ''
+        character = ''
+        character_count = char_amount
+        with open('metadata/RARITIES.json', 'r') as file:
+            rarities = json.loads(file.read())
+
+        # Sets the amount of each trait
+        for x in range(character_count):
+            with open(f'metadata/QSTN#{x + 1}.json', 'r') as character:
+                character = json.loads(character.read())
+
+                for item in character['attributes']:
+                    rarities[item['trait_type']][item['value']]['amount'] += 1
+
+        result = json.dumps(rarities, indent=4)
+        with open('metadata/RARITIES.json', 'w') as f:
+            f.write(result)
 
     def execute(self, context):
         scene = context.scene
         mytool = scene.my_tool
 
-        self.generate()
+        self.generate_template(mytool.char_amount)
         return {'FINISHED'}
 
 
