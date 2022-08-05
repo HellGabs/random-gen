@@ -284,8 +284,21 @@ class RarityIndex(bpy.types.Operator):
             with open(f'metadata/QSTN#{x + 1}.json', 'r') as character:
                 character = json.loads(character.read())
 
+                # counts each item
                 for item in character['attributes']:
                     rarities[item['trait_type']][item['value']]['amount'] += 1
+
+                # finds the rarity value
+
+        def sum_traits(collection):
+            total = 0
+            for item in rarities[collection]:
+                total += rarities[collection][item]['amount']
+            return total
+
+        for collection in rarities:
+            for item in rarities[collection]:
+                rarities[collection][item]['rarity'] = str(f'{100-(rarities[collection][item]["amount"]/sum_traits(collection))*100}%')
 
         result = json.dumps(rarities, indent=4)
         with open('metadata/RARITIES.json', 'w') as f:
